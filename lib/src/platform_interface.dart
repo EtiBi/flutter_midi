@@ -17,7 +17,7 @@ class FlutterMidiPlatform extends PlatformInterface {
   /// Needed so that the sound font is loaded
   /// On iOS make sure to include the sound_font.SF2 in the Runner folder.
   /// This does not work in the simulator.
-  Future<String?> prepare({
+  static Future<String?> prepare({
     required ByteData? sf2,
     String name = 'instrument.sf2',
   }) async {
@@ -28,7 +28,7 @@ class FlutterMidiPlatform extends PlatformInterface {
   /// Needed so that the sound font is loaded
   /// On iOS make sure to include the sound_font.SF2 in the Runner folder.
   /// This does not work in the simulator.
-  Future<String?> changeSound({
+  static Future<String?> changeSound({
     required ByteData? sf2,
     String name = 'instrument.sf2',
   }) async {
@@ -36,14 +36,14 @@ class FlutterMidiPlatform extends PlatformInterface {
   }
 
   /// Unmute the device temporarily even if the mute switch is on or toggled in settings.
-  Future<String?> unmute() async {
+  static Future<String?> unmute() async {
     throw UnimplementedError('canLaunch() has not been implemented.');
   }
 
   /// Use this when stopping the sound onTouchUp or to cancel a long file.
   /// Not needed if playing midi onTap.
   /// Stop with velocity in the range between 0-127
-  Future<String?> stopMidiNote({
+  static Future<String?> stopMidiNote({
     required int midi,
     int velocity = 64,
   }) async {
@@ -54,7 +54,7 @@ class FlutterMidiPlatform extends PlatformInterface {
   /// Play a midi note in the range between 0-127
   /// Play with velocity in the range between 0-127
   /// Multiple notes can be played at once as separate calls.
-  Future<String?> playMidiNote({
+  static Future<String?> playMidiNote({
     required int midi,
     int velocity = 64,
   }) async {
