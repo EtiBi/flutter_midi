@@ -8,7 +8,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.plugin.common.BinaryMessenger;
 import java.io.File;
 import java.io.IOException;
@@ -24,31 +23,11 @@ public class FlutterMidiPlugin implements MethodCallHandler, FlutterPlugin {
   private MethodChannel methodChannel;
   private Context applicationContext;
 
-  /** Plugin registration. */
-  @SuppressWarnings("deprecation")
-  public static void registerWith(Registrar registrar) {
-    final FlutterMidiPlugin instance = new FlutterMidiPlugin();
-    instance.onAttachedToEngine(registrar.context(), registrar.messenger());
-  }
-
   @Override
   public void onAttachedToEngine(FlutterPluginBinding binding) {
-    onAttachedToEngine(binding.getApplicationContext(), binding.getBinaryMessenger());
-  }
-
-  /*
-    "Also, note that the plugin should still contain the static registerWith() method 
-    to remain compatible with apps that don’t use the v2 Android embedding. 
-    (See Upgrading pre 1.12 Android projects for details.) The easiest thing to 
-    do (if possible) is move the logic from registerWith() into a private method that 
-    both registerWith() and onAttachedToEngine() can call. Either registerWith() or 
-    onAttachedToEngine() will be called, not both."
-
-    - https://flutter.dev/docs/development/packages-and-plugins/plugin-api-migration
-  */
-  private void onAttachedToEngine(Context applicationContext, BinaryMessenger messenger) {
-    methodChannel = new MethodChannel(messenger, "flutter_midi");
-    methodChannel.setMethodCallHandler(new FlutterMidiPlugin());
+    this.applicationContext = binding.getApplicationContext();
+    methodChannel = new MethodChannel(binding.getBinaryMessenger(), "flutter_midi");
+    methodChannel.setMethodCallHandler(this);
   }
 
   @Override
@@ -60,8 +39,8 @@ public class FlutterMidiPlugin implements MethodCallHandler, FlutterPlugin {
 
   @Override
   public void onMethodCall(MethodCall call, Result result) {
-    if (call.method.equals("prepare_midi")) {
-      try {
+    try {
+      if (call.method.equals("prepare_midi")) {
         String _path = call.argument("path");
         File _file = new File(_path);
         SF2Soundbank sf = new SF2Soundbank(_file);
@@ -71,13 +50,8 @@ public class FlutterMidiPlugin implements MethodCallHandler, FlutterPlugin {
         synth.getChannels()[0].programChange(0);
         synth.getChannels()[1].programChange(1);
         recv = synth.getReceiver();
-      } catch (IOException e) {
-        e.printStackTrace();
-      } catch (MidiUnavailableException e) {
-        e.printStackTrace();
-      }
-    } else if (call.method.equals("change_sound")) {
-      try {
+        result.success(null);
+      } else if (call.method.equals("change_sound")) {
         String _path = call.argument("path");
         File _file = new File(_path);
         SF2Soundbank sf = new SF2Soundbank(_file);
@@ -87,32 +61,32 @@ public class FlutterMidiPlugin implements MethodCallHandler, FlutterPlugin {
         synth.getChannels()[0].programChange(0);
         synth.getChannels()[1].programChange(1);
         recv = synth.getReceiver();
-      } catch (IOException e) {
-        e.printStackTrace();
-      } catch (MidiUnavailableException e) {
-        e.printStackTrace();
-      }
-    } else if (call.method.equals("play_midi_note")) {
-      int _note = call.argument("note");
-      int _velocity = call.argument("velocity");
-      try {
+        result.success(null);
+      } else if (call.method.equals("play_midi_note")) {
+        int _note = call.argument("note");
+        int _velocity = call.argument("velocity");
         ShortMessage msg = new ShortMessage();
         msg.setMessage(ShortMessage.NOTE_ON, 0, _note, _velocity);
         recv.send(msg, -1);
-      } catch (InvalidMidiDataException e) {
-        e.printStackTrace();
-      }
-    } else if (call.method.equals("stop_midi_note")) {
-      int _note = call.argument("note");
-      int _velocity = call.argument("velocity");
-      try {
+        result.success(null);
+      } else if (call.method.equals("stop_midi_note")) {
+        int _note = call.argument("note");
+        int _velocity = call.argument("velocity");
         ShortMessage msg = new ShortMessage();
         msg.setMessage(ShortMessage.NOTE_OFF, 0, _note, _velocity);
         recv.send(msg, -1);
-      } catch (InvalidMidiDataException e) {
-        e.printStackTrace();
+        result.success(null);
+      } else {
+        result.notImplemented();
       }
-    } else {
+    } catch (IOException e) {
+      result.error("IO_ERROR", "Failed to load soundbank: " + e.getMessage(), null);
+    } catch (MidiUnavailableException e) {
+      result.error("MIDI_UNAVAILABLE", "MIDI synthesizer unavailable: " + e.getMessage(), null);
+    } catch (InvalidMidiDataException e) {
+      result.error("INVALID_MIDI_DATA", "Invalid MIDI data: " + e.getMessage(), null);
+    } catch (Exception e) {
+      result.error("UNKNOWN_ERROR", "An unexpected error occurred: " + e.getMessage(), null);
     }
   }
 }
